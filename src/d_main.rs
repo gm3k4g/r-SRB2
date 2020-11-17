@@ -9,6 +9,7 @@ use crate::m_argv::MArgv;
 use crate::g_game::Game;
 use crate::sounds::Sounds;
 use crate::dehacked::Dehacked;
+use crate::z_zone::Zone;
 
 // For SDL interface
 use crate::sdl::i_system::ISystem;
@@ -158,7 +159,8 @@ impl DMain {
 		mut i_system: ISystem,
 		i_video: IVideo,
 		mixer_sound: MixerSound,
-		i_main: &mut IMain
+		i_main: &mut IMain,
+		z_zone: Zone
 		) {
 		let _p: i32;
 		let _pstartmap: i32 = 1;
@@ -220,9 +222,67 @@ impl DMain {
 				// unfortunately variadic functions are not a thing in Rust
 				// therefore we'll use an array instead
 				i_system.i_error(&["Please set $HOME to your home directory\n"], i_video, mixer_sound, i_main);
-			}
+				/*
+				if self.dedicated {
+					//snprintf(configfile, sizeof configfile, "d"CONFIGFILENAME);
+				else {
+					//snprintf(configfile, sizeof configfile, CONFIGFILENAME);
+				}*/
+			} else {
+				//use user specific config file
+				if self.dedicated {
+					cons_printf!(self.srb2home);//snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, srb2home);
+				} else {
+					cons_printf!(self.srb2home);//snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2home);
+				}
+			
+			/*
+			// can't use sprintf since there is %u in savegamename
+			strcatbf(savegamename, srb2home, PATHSEP);
+			strcatbf(liveeventbackup, srb2home, PATHSEP);
 
+			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
+
+			snprintf(srb2home, sizeof srb2home, "%s", userhome);
+			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
+			if (dedicated)
+				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, userhome);
+			else
+				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, userhome);
+
+			// can't use sprintf since there is %u in savegamename
+			strcatbf(savegamename, userhome, PATHSEP);
+			strcatbf(liveeventbackup, userhome, PATHSEP);
+
+			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
+		}
+		configfile[sizeof configfile - 1] = '\0';
+		*/
 		// }
+		}
+
+		// create addons dir
+		//snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
+		//I_mkdir(addonsdir, 0755);
+
+		// rand() needs seeded regardless of password
+		//srand((unsigned int)time(NULL));
+		//rand();
+		//rand();
+		//rand();
+
+		/*
+		if m_argv.m_check_parm(cmd_args::PASSWORD) && m_argv.m_is_next_parm() {
+			//d_netcmd.d_set_password(m_get_next_parm());
+		}
+		*/
+
+		// player setup menu colors must be initialized before
+		// any wad file is added, as they may contain colors themselves
+		//m_menu.m_init_player_setup_colors();
+
+		cons_printf!("Z_Init(): Init zone memory allocation daemon. \n");
+		z_zone.z_init();
 
 	}
 

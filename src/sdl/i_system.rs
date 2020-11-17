@@ -77,6 +77,8 @@ impl ISystem {
 		*/
 		self.i_output_msg(msgs, i_main);
 
+		// save game config, cvars..
+
 	}
 
 	pub fn i_output_msg(&self, msgs: &[&str], i_main: &mut IMain) {

@@ -124,4 +124,24 @@ impl Misc {
 			cons_printf!("Could not find locale text domain!\n");
 		}
 	}
+
+	pub fn m_save_config(&self, filename: &str) {
+		let _f: std::fs::File;
+		let _filepath: &str;
+
+		// make sure not to write back the config until it's been correctly loaded
+		if !self.gameconfig_loaded {
+			return;
+		}
+
+		// can change the filename
+		if filename != "" {
+			if !filename.contains(".cfg") {
+				//TODO: cons_alert
+				//CONS_Alert(CONS_NOTICE, M_GetText("Config filename must be .cfg\n"));
+				cons_printf!("Config filename must be .cfg\n");
+			}
+		}
+
+	}
 }

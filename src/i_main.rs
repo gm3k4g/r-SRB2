@@ -7,6 +7,7 @@ use crate::m_misc::Misc;
 use crate::g_game::Game;
 use crate::sounds::Sounds;
 use crate::dehacked::Dehacked;
+use crate::z_zone::Zone;
 
 // from SDL interface
 use crate::sdl::i_system::ISystem;
@@ -131,6 +132,7 @@ impl IMain {
 		i_system: ISystem,
 		i_video: IVideo,
 		mixer_sound: MixerSound,
+		z_zone: Zone,
 		) {
 		//ifdef LOGMESSAGES
 		if m_argv.m_check_parm(cmd_args::NOLOG) == 0 {
@@ -142,7 +144,7 @@ impl IMain {
 		d_main.srb2_main(
 			console, m_misc, m_argv, g_game,
 			sounds, dehacked, i_system, i_video,
-			mixer_sound, self
+			mixer_sound, self, z_zone
 		);
 		
 		/*
