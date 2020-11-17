@@ -1,7 +1,19 @@
 use crate::version;
 
+use crate::cmd_args;
+
+use crate::i_main::IMain;
 use crate::console::Cons;
 use crate::m_misc::Misc;
+use crate::m_argv::MArgv;
+use crate::g_game::Game;
+use crate::sounds::Sounds;
+use crate::dehacked::Dehacked;
+
+// For SDL interface
+use crate::sdl::i_system::ISystem;
+use crate::sdl::i_video::IVideo;
+use crate::sdl::mixer_sound::MixerSound;
 
 pub struct DMain {
 	// Version numbers for netplay 
@@ -135,7 +147,19 @@ impl DMain {
 		self.subversion = version::SRB2VERSION.chars().nth(2).unwrap().to_digit(10).unwrap() as i32;
 	}
 
-	pub fn srb2_main(&mut self, console: Cons) {
+	// Do preparations
+	pub fn srb2_main(&mut self, 
+		_console: Cons,
+		m_misc: Misc,
+		mut m_argv: MArgv,
+		mut g_game: Game,
+		sounds: Sounds,
+		dehacked: Dehacked,
+		mut i_system: ISystem,
+		i_video: IVideo,
+		mixer_sound: MixerSound,
+		i_main: &mut IMain
+		) {
 		let _p: i32;
 		let _pstartmap: i32 = 1;
 		let _autostart: bool = false;
@@ -145,20 +169,114 @@ impl DMain {
 
 		// todo: something is probably wrong about this?
 		// Print GPL notice for our console users (Linux)
-		console.printf(
-		"\n\nSonic Robo Blast 2\n
-		Copyright (C) 1998-2020 by Sonic Team Junior\n\n
-		This program comes with ABSOLUTELY NO WARRANTY.\n\n
-		This is free software, and you are welcome to redistribute it\n
-		and/or modify it under the terms of the GNU General Public License\n
-		as published by the Free Software Foundation; either version 2 of\n
-		the License, or (at your option) any later version.\n
-		See the 'LICENSE.txt' file for details.\n\n
-		Sonic the Hedgehog and related characters are trademarks of SEGA.\n
-		We do not claim ownership of SEGA's intellectual property used\n
-		in this program.\n\n");
+		cons_printf!(
+		"\n\nSonic Robo Blast 2\n",
+		"Copyright (C) 1998-2020 by Sonic Team Junior\n\n",
+		"This program comes with ABSOLUTELY NO WARRANTY.\n\n",
+		"This is free software, and you are welcome to redistribute it\n",
+		"and/or modify it under the terms of the GNU General Public License\n",
+		"as published by the Free Software Foundation; either version 2 of\n",
+		"the License, or (at your option) any later version.\n",
+		"See the 'LICENSE.txt' file for details.\n\n",
+		"Sonic the Hedgehog and related characters are trademarks of SEGA.\n",
+		"We do not claim ownership of SEGA's intellectual property used\n",
+		"in this program.\n\n");
 
 		// initialise locale code
 		m_misc.m_startup_locale();
+
+		// get parameters from a response file (eg: srb2 @parms.txt)
+		m_argv.m_find_response_file();
+
+		// MAINCFG is now taken care of where "OBJCTCFG" is handled
+		g_game.g_load_game_settings(sounds);
+
+		// Test Dehacked Lists
+		dehacked.deh_check();
+
+		// Netgame URL special case: change working dir to EXE folder.
+		//ChangeDirForUrlHandler()
+
+		// identify the main IWAD file to use
+		//self.identify_version();
+
+		self.devparm = m_argv.m_check_parm(cmd_args::DEBUG) != 0;
+		self.dedicated = m_argv.m_check_parm(cmd_args::DEDICATED) != 0;
+
+		if self.devparm {
+			//CONS_Printf(M_GetText("Development mode ON.\n"));
+			cons_printf!("Development mode ON.\n");
+		}
+
+		// default savegame
+		//strcpy(savegamename, SAVEGAMENAME"%u.ssg");
+		//strcpy(liveeventbackup, "live"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
+
+		// wat
+		// {
+			let userhome: String = self.d_home(m_argv);
+
+			if userhome == "".to_string() {
+				// unfortunately variadic functions are not a thing in Rust
+				// therefore we'll use an array instead
+				i_system.i_error(&["Please set $HOME to your home directory\n"], i_video, mixer_sound, i_main);
+			}
+
+		// }
+
+	}
+
+	// Main game loop
+	pub fn srb2_loop(&self,
+		_console: Cons
+		//d_clisrv: DClisrv
+		) {
+		//TODO: ACCEPTS a tic_t
+		//let mut oldentertics: tic_t = 0
+		//let mut entertic: tic_t = 0
+		//let mut realtics: tic_t = 0
+		// WHEREIS: INFTICS ?
+		//let mut rendertimeout: tic_t = INFTICS;
+
+		// TODO: ACCEPTS a lumpnum_t
+		//let gstartuplumpnum: lumpnum_t;
+
+		//if self.dedicated {
+			// WHEREIS: server ?? => IS IN d_clisrv.c
+		//	self.serv
+		//}
+
+		// Part of directdraw
+		/*
+		cons_printf!("I_StartupMouse()...\n");
+		I_DoStartUpMouse();
+		*/
+
+		//oldentertics = 
+		
+	}
+
+	pub fn d_home(&self, _m_argv: MArgv) -> String {
+		let mut _userhome: String = String::from("");
+/*
+		if m_argv.m_check_parm("-home") && m_argv.m_is_next_parm() {
+			userhome = m_argv.m_get_next_parm();
+		} else {
+			if FIL_FileOk(CONFIGFILENAME) {
+				self.usehome = false // let's NOT use home
+			} else {
+				userhome = //I_GetEnv("HOME"); //
+			}
+		}
+
+		// todo
+		if userhome = "" && self.usehome {
+
+		}*/
+		cons_printf!("TODO: make d_home() work!\n");
+		if self.usehome {
+			return _userhome;
+		}
+		std::string::String::from("")
 	}
 }

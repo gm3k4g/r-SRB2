@@ -4,3 +4,5 @@
 pub const NOLOG: &str = "-nolog";
 pub const LOGFILE: &str = "-logfile";
 pub const LOGDIR: &str = "-logdir";
+pub const DEBUG: &str = "-debug";
+pub const DEDICATED: &str = "-dedicated";

@@ -1,1 +1,6 @@
+# ignore executable
 /target
+
+# ignore test response file
+@params.txt
+

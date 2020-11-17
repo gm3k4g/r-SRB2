@@ -3,24 +3,34 @@ use crate::cmd_args;
 use crate::d_main::DMain;
 use crate::m_argv::MArgv;
 use crate::console::Cons;
+use crate::m_misc::Misc;
+use crate::g_game::Game;
+use crate::sounds::Sounds;
+use crate::dehacked::Dehacked;
+
+// from SDL interface
+use crate::sdl::i_system::ISystem;
+use crate::sdl::i_video::IVideo;
+use crate::sdl::mixer_sound::MixerSound;
 
 pub struct IMain {
 	// LogMessages
 	pub logstream: Option<std::fs::File>,
-	pub logfilename: &'static str,
+	pub logfilename: std::string::String,
 }
 impl IMain {
 	pub fn new() -> Self {
 		IMain {
 			logstream: None,
-			logfilename: "",
+			logfilename: std::string::String::from("None"),
 		}
 	}
 
 	//fn make_code_writeable()
 
 	//ifdef LOGMESSAGES
-	/*fn init_logging(&self) {
+	pub fn init_logging(&self) {
+		/*
 		let mut logdir: &str;
 
 		//let mut my_time: time_t;
@@ -105,35 +115,48 @@ impl IMain {
 			//else
 			logstream = fopen("latest-log.txt", "wt+");
 			//endif
-		}*/
+			*/
+			cons_printf!("Logging is on.\n");
+		}
 		//endif
 
-	pub fn main(&self, 
-		mut m_argv: MArgv, console: Cons,
-		mut d_main: DMain
+	pub fn main(&mut self, 
+		mut m_argv: MArgv, 
+		console: Cons,
+		mut d_main: DMain,
+		m_misc: Misc,
+		g_game: Game,
+		sounds: Sounds,
+		dehacked: Dehacked,
+		i_system: ISystem,
+		i_video: IVideo,
+		mixer_sound: MixerSound,
 		) {
 		//ifdef LOGMESSAGES
 		if m_argv.m_check_parm(cmd_args::NOLOG) == 0 {
-			//init_logging();
-			println!("Logging is on.");
+			self.init_logging();
 		}
 		
 		//endif
-		console.printf("Setting up SRB2...\n");
-		// TODO: ACCEPTS a DMain struct
-		d_main.srb2_main(console);
+		cons_printf!("Setting up SRB2...\n"); //console.printf("Setting up SRB2...\n");
+		d_main.srb2_main(
+			console, m_misc, m_argv, g_game,
+			sounds, dehacked, i_system, i_video,
+			mixer_sound, self
+		);
+		
 		/*
 		//ifdef LOGMESSAGES
-		if MArgv::m_check_parm(cmd_args::NOLOG) != 0 {
-			Cons::printf("Logfile: %s\n", logfilename);
+		if m_argv.m_check_parm(cmd_args::NOLOG) == 0 {
+			cons_printf!("Logfile: ", self.logfilename, "\n");
 		}
-		Cons::printf("Entering main game loop...\n");
-
+		
+		cons_printf!("Entering main game loop...\n");
 		// Entrypoint to the game's main loop
-		DMain::srb2_main_loop();
+		d_main.srb2_main_loop();
 
 		// Quit successful
-		std::process::exit(0);
+		//std::process::exit(0);
 		*/
 	}
 }

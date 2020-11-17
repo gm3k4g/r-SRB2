@@ -8,4 +8,5 @@ edition = "2018"
 
 [dependencies]
 sdl2 = "*"
+bitflags = "*"
 sdl2-sys = "*"
