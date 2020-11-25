@@ -8,11 +8,14 @@ use crate::g_game::Game;
 use crate::sounds::Sounds;
 use crate::dehacked::Dehacked;
 use crate::z_zone::Zone;
+use crate::command::Command;
+use crate::screen::Screen;
 
 // from SDL interface
 use crate::sdl::i_system::ISystem;
 use crate::sdl::i_video::IVideo;
 use crate::sdl::mixer_sound::MixerSound;
+use crate::sdl::sdlmain::SdlMain;
 
 pub struct IMain {
 	// LogMessages
@@ -121,18 +124,21 @@ impl IMain {
 		}
 		//endif
 
-	pub fn main(&mut self, 
+	pub fn i_main(&mut self, 
 		mut m_argv: MArgv, 
 		console: Cons,
 		mut d_main: DMain,
 		m_misc: Misc,
-		g_game: Game,
+		mut g_game: Game,
 		sounds: Sounds,
 		dehacked: Dehacked,
-		i_system: ISystem,
-		i_video: IVideo,
+		mut i_system: ISystem,
+		mut i_video: IVideo<'static>,
 		mixer_sound: MixerSound,
 		z_zone: Zone,
+		mut command: Command,
+		mut sdlmain: SdlMain,
+		screen: Screen
 		) {
 		//ifdef LOGMESSAGES
 		if m_argv.m_check_parm(cmd_args::NOLOG) == 0 {
@@ -140,11 +146,23 @@ impl IMain {
 		}
 		
 		//endif
-		cons_printf!("Setting up SRB2...\n"); //console.printf("Setting up SRB2...\n");
-		d_main.srb2_main(
-			console, m_misc, m_argv, g_game,
-			sounds, dehacked, i_system, i_video,
-			mixer_sound, self, z_zone
+
+		// SDL things
+		let mut sdl_context: Option<sdl2::Sdl> = None;
+    	let mut video_subsystem: Option<sdl2::VideoSubsystem> = None;
+    	let mut window_canvas: Option<sdl2::render::WindowCanvas> = None;
+    	let mut event_pump: Option<sdl2::EventPump> = None;
+
+		cons_printf!("Setting up SRB2...\n");
+		d_main.srb2_main( 
+			&console, &m_misc, &mut m_argv, &mut g_game,
+			&sounds, &dehacked, &mut i_system, &mut i_video,
+			// SDL
+			&mut sdl_context, &mut video_subsystem, &mut window_canvas,
+			&mut event_pump,
+
+			&mixer_sound, self, &z_zone, &mut command,
+			&mut sdlmain, &screen
 		);
 		
 		/*

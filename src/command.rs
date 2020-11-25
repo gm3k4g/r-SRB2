@@ -1,3 +1,9 @@
+// For SDL interface
+use crate::sdl::i_main::IMain;
+use crate::sdl::i_system::ISystem;
+use crate::sdl::i_video::IVideo;
+use crate::sdl::mixer_sound::MixerSound;
+
 //===================================
 // Command buffer & command execution
 //===================================
@@ -68,16 +74,14 @@ enum CVFlagsT {
 	CvNolua = 4096,/* don't let this be called from Lua */
 }
 
+#[derive(Default)]
 pub struct CvPossibleValueT {
 	pub value: i32,
 	pub strvalue: String,
 }
 impl CvPossibleValueT {
 	pub fn new() -> Self {
-		CvPossibleValueT {
-			value: 0,
-			strvalue: String::from(""),
-		}
+		Self::default()
 	}
 }
 
@@ -85,6 +89,7 @@ impl CvPossibleValueT {
 //what
 //
 //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
+#[derive(Default)]
 pub struct ConsVarT {
 	pub name: String,
 	pub defaultvalue: String,
@@ -103,21 +108,7 @@ pub struct ConsVarT {
 }
 impl ConsVarT {
 	pub fn new() -> Self {
-		ConsVarT {
-			name: String::from(""),
-			defaultvalue: String::from(""),
-			flags: 0,
-			possible_value: CvPossibleValueT::new(),
-
-			value: 0,
-			string: String::from(""),
-			zstring: String::from(""),
-
-			netid: 0,
-			changed: ' ',
-
-			next: None,
-		}
+		Self::default()
 	}
 }
 
@@ -131,8 +122,33 @@ pub struct OldDemoVar {
 }
 
 
+// =========================================================================
+//                            COMMAND EXECUTION
+// =========================================================================
+
+#[derive(Default)]
+pub struct XCommandT {
+	pub name: String,
+	pub next: Option<Box<XCommandT>>
+}
+impl XCommandT {
+	pub fn new() -> Self {
+		Self::default()
+	}
+}
+// TODO: implement a structure that has .inter() method for going through a 'list'?
+/*
+impl Iterator for XCommandT {
+
+	// When iterator finishes, None returns
+	// Otherwise, next value is wrapped in 'Some' and returned
+	fn next(&mut self) -> Option<u32> {
+
+	}
+}*/
 
 
+#[derive(Default)]
 pub struct Command {
 	// TODO: are these arrays?
 	pub cv_onoff: CvPossibleValueT, //CV_PossibleValue_t CV_OnOff[];
@@ -143,15 +159,135 @@ pub struct Command {
 	// Filter consvars by version
 	pub cv_execversion: ConsVarT,
 
+	// current commands
+	pub com_commands: XCommandT,
+
+	// =========================================================================
+	//
+	//                           CONSOLE VARIABLES
+	//
+	//   console variables are a simple way of changing variables of the game
+	//   through the console or code, at run time.
+	//
+	//   console vars acts like simplified commands, because a function can be
+	//   attached to them, and called whenever a console var is modified
+	//
+	// =========================================================================
+	pub cv_null_string: String
+
 }
 impl Command {
 	pub fn new() -> Self {
-		Command {
-			cv_onoff: CvPossibleValueT::new(),
-			cv_yesno: CvPossibleValueT::new(),
-			cv_unsigned: CvPossibleValueT::new(),
-			cv_natural: CvPossibleValueT::new(),
-			cv_execversion: ConsVarT::new(),	
+		Self::default()
+	}
+
+	/* 	* Add a console command.
+		*
+		* param name: Name of the command
+		* param func: Function called when the command is run
+		*/
+	pub fn com_addcommand(&mut self,
+		name: &str, 
+		//_func: fn(), //why?
+		i_system: &mut ISystem,
+		i_video: &IVideo,
+		mixer_sound: &MixerSound,
+		i_main: &mut IMain
+		) {
+		let cmd: XCommandT = XCommandT::new();
+
+		// fail if command is a variable name
+		match self.cv_string_value(name.to_string()).chars().next() {
+			Some(character) => {
+				if character != '\0' {
+					i_system.i_error(&[name, " is a variable name\n"], &i_video, &mixer_sound, i_main);
+					return;
+				}
+			},
+			None => {
+				cons_printf!("com_addcommand(): no character detected!\n");
+			},
+		};
+
+		//fail if the command already exists
+		// TODO: go through cmd's `next` field until the end
+
+		// function is passed to cmd
+		// i_video.vid_command_nummodes_f();
+		cons_printf!("TODO: make com_addcommand() work!\n");
+	}
+
+	/*	* Registers a variable for later use from the console
+		*
+		* param variable: the variable to register
+		*/
+	pub fn cv_register_var(&self, variable: &ConsVarT) {
+		// Check if already was defined
+		match self.cv_find_var(variable.name.clone()) {
+			Some(consvar) => {
+				cons_printf!("Variable ", consvar.name, " is already defined\n");
+				return;
+			},
+			None => {},
 		}
+	}
+
+
+	/* 	* Initializes command buffer and adds basic commands
+
+		*/
+	pub fn com_init(&self) {
+		// allocate command buffer
+		cons_printf!("TODO: make com_init() work!\n");
+	}
+
+	// =========================================================================
+	//                      VARIABLE SIZE BUFFERS
+	// =========================================================================
+
+	/*	* Initialize a 'variable' size buffer?
+		* 
+		* param buf: 		The buffer to initialize.
+		* param initsize: 	The initial size for the buffer.
+		*/
+	pub fn vs_alloc(&self/*, Vec<?>: buf, initsize: usize?*/) {
+		// WHEREIS: VSBUFMINSIZE
+		// allocate command buffer
+		cons_printf!("TODO: make vs_alloc() work!\n");
+	}
+
+	/*	* Finds the string value of a console variable
+		*
+		* param var_name: The variable's name	
+		* return the string value or "" if variable not found.
+		*/
+	pub fn cv_string_value(&self, _var_name: String) -> String {
+		let var: Option<ConsVarT> = None; //fixme
+
+		cons_printf!("FIX_ME: cv_string_value() \n");
+		//var = self.cv_find_var(var_name);
+		match var {
+			Some(variable) => {
+				return variable.string;
+			}
+			None => {
+				return self.cv_null_string.clone();
+			}
+		}
+	}
+
+	/*	* Searches if a variable has been registered
+		* 
+		* param name: Variable to search for
+		* return Variable if found, otherwise None
+		*/
+	pub fn cv_find_var(&self, _name: String) -> Option<ConsVarT> {
+		cons_printf!("TODO: make cv_find_var() work!\n");
+		/*let mut cvar: ConsVarT = self.consvar_vars;
+
+		while cvar == cvar.next {
+
+		}*/
+		None
 	}
 }

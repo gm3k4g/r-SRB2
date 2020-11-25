@@ -334,7 +334,7 @@ impl Game {
 		Self::default()
 	}
 
-	pub fn g_load_game_settings(&mut self, sounds: Sounds) {
+	pub fn g_load_game_settings(&mut self, sounds: &Sounds) {
 		//defaults
 		self.spstage_start = 1;
 		self.spmarathon_start = 1;

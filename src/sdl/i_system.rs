@@ -1,6 +1,5 @@
-use crate::i_main::IMain;
-
 // For SDL interface
+use crate::sdl::i_main::IMain;
 use crate::sdl::i_video::IVideo;
 use crate::sdl::mixer_sound::MixerSound;
 
@@ -8,6 +7,8 @@ use crate::sdl::mixer_sound::MixerSound;
 #[derive(Default)]
 pub struct ISystem {
 	pub return_wad_path: String,
+
+	pub keyboard_started: bool,
 
 	// .i_error()
 	pub shutdowning: bool,
@@ -23,8 +24,8 @@ impl ISystem {
 	}
 
 	pub fn i_error(&mut self, msgs: &[&str], 
-		i_video: IVideo,
-		mixer_sound: MixerSound,
+		i_video: &IVideo,
+		mixer_sound: &MixerSound,
 		i_main: &mut IMain,
 		) {
 
@@ -81,9 +82,9 @@ impl ISystem {
 
 	}
 
-	pub fn i_output_msg(&self, msgs: &[&str], i_main: &mut IMain) {
+	pub fn i_output_msg(&self, _msgs: &[&str], i_main: &mut IMain) {
 		match &i_main.logstream {
-			Some(file) => {
+			Some(_file) => {
 				cons_printf!("writing log to logstream...\n");
 			},
 			None => {

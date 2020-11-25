@@ -2,7 +2,6 @@ use crate::version;
 
 use crate::cmd_args;
 
-use crate::i_main::IMain;
 use crate::console::Cons;
 use crate::m_misc::Misc;
 use crate::m_argv::MArgv;
@@ -10,11 +9,15 @@ use crate::g_game::Game;
 use crate::sounds::Sounds;
 use crate::dehacked::Dehacked;
 use crate::z_zone::Zone;
+use crate::command::Command;
+use crate::screen::Screen;
 
 // For SDL interface
+use crate::sdl::i_main::IMain;
 use crate::sdl::i_system::ISystem;
 use crate::sdl::i_video::IVideo;
 use crate::sdl::mixer_sound::MixerSound;
+use crate::sdl::sdlmain::SdlMain;
 
 pub struct DMain {
 	// Version numbers for netplay 
@@ -150,17 +153,26 @@ impl DMain {
 
 	// Do preparations
 	pub fn srb2_main(&mut self, 
-		_console: Cons,
-		m_misc: Misc,
-		mut m_argv: MArgv,
-		mut g_game: Game,
-		sounds: Sounds,
-		dehacked: Dehacked,
-		mut i_system: ISystem,
-		i_video: IVideo,
-		mixer_sound: MixerSound,
+		_console: &Cons,
+		m_misc: &Misc,
+		m_argv: &mut MArgv,
+		g_game: &mut Game,
+		sounds: &Sounds,
+		dehacked: &Dehacked,
+		i_system: &mut ISystem,
+		i_video: &mut IVideo<'static>,
+		// SDL
+		sdl_context: &mut Option<sdl2::Sdl>,
+		video_subsystem: &mut Option<sdl2::VideoSubsystem>,
+		window_canvas: &mut Option<sdl2::render::WindowCanvas>,
+		event_pump: &mut Option<sdl2::EventPump>,
+
+		mixer_sound: &MixerSound,
 		i_main: &mut IMain,
-		z_zone: Zone
+		z_zone: &Zone,
+		command: &mut Command,
+		sdlmain: &mut SdlMain,
+		screen: &Screen
 		) {
 		let _p: i32;
 		let _pstartmap: i32 = 1;
@@ -221,7 +233,7 @@ impl DMain {
 			if userhome == "".to_string() {
 				// unfortunately variadic functions are not a thing in Rust
 				// therefore we'll use an array instead
-				i_system.i_error(&["Please set $HOME to your home directory\n"], i_video, mixer_sound, i_main);
+				i_system.i_error(&["Please set $HOME to your home directory\n"], &i_video, &mixer_sound, i_main);
 				/*
 				if self.dedicated {
 					//snprintf(configfile, sizeof configfile, "d"CONFIGFILENAME);
@@ -284,6 +296,102 @@ impl DMain {
 		cons_printf!("Z_Init(): Init zone memory allocation daemon. \n");
 		z_zone.z_init();
 
+		// Do this up here so that WADs loaded through the command line can use ExecCfg
+		command.com_init();
+
+		// add any files specified on the commandline with -file wadfile
+		// to the wad list
+		/*
+		if !m_argv.m_get_url_protocol_arg() || m_argv.m_check_parm(cmd_args::CONNECT) && !m_argv.m_check_parm(cmd_args::SERVER) {
+			if m_argv.m_check_parm(cmd_args::FILE) {
+				// the parms after p are wadfile/lump names,
+				// until end of parms or another - preceded parm
+				while m_argv.m_is_next_parm() {
+					let s: String = m_argv.m_get_next_parm();
+
+					if !w_wad.w_verify_nmuslumps(s) {
+						g_game.g_set_game_modified(true);
+					}
+					d_addfile(self.startuppwads, s);
+				}
+			}
+		}
+		*/
+
+		// get map from parms
+		/*
+		if m_argv.m_check_parm(cmd_args::SERVER) || self.dedicated {
+			d_clisrv.server = true;
+			g_game.netgame = true;
+		}*/
+
+		// adapt tables to SRB2's needs, including extra slots for dehacked file support
+		//P_PatchInfoTables();
+
+		//initiate menu metada before SOCcing them
+		//M_InitMenuPresTables();
+
+		// init title screen display params
+		/*(if m_argv.m_get_url_protocol_arg() || m_check_parm(cmd_args::CONNECT) {
+			F_InitMenuPresValues();
+		}
+		*/
+
+		//---------------------------------------------------- READY TIME
+		// we need to check for dedicated before initialization of some subsystems
+		cons_printf!("I_StartupTimer()...\n");
+		//I_StartupTimer();
+
+		// Make backups of some SOCcable tables.
+		//P_BackupTables();
+
+		// Setup character tables
+		// Have to be done here before files are loaded
+		//M_InitCharacterTables();
+
+		//mainwads = 3; // doesn't include music.dta
+
+		// load wad, including the main wad file
+		cons_printf!("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
+		//W_InitMultipleFiles(startupwadfiles);
+		//D_CleanFile(startupwadfiles);
+		/*
+	// Check MD5s of autoloaded files
+	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); // srb2.pk3
+	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); // zones.pk3
+	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
+//#ifdef USE_PATCH_DTA
+	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
+//#endif
+	// don't check music.dta because people like to modify it, and it doesn't matter if they do
+	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
+	*/
+
+	//mainwadstally = packetsizetally; // technically not accurate atm, remember to port the two-stage -file process from kart in 2.2.x
+
+	//cht_Init();
+
+	//---------------------------------------------------- READY SCREEN
+	// we need to check for dedicated before initialization of some subsystems
+
+	cons_printf!("I_StartupGraphics()...\n");
+	i_video.i_startup_graphics(
+			self, command, i_system, mixer_sound, i_main,
+			m_argv,
+			// SDL
+			sdl_context, video_subsystem, window_canvas, event_pump,
+			sdlmain, screen);
+//#ifdef HWRENDER
+	// Lactozilla: Add every hardware mode CVAR and CCMD.
+	// Has to be done before the configuration file loads,
+	// but after the OpenGL library loads.
+	//HWR_AddCommands();
+//#endif
+
+	//--------------------------------------------------------- CONSOLE
+	// setup loading screen
+	//SCR_Startup();
+
 	}
 
 	// Main game loop
@@ -316,7 +424,7 @@ impl DMain {
 		
 	}
 
-	pub fn d_home(&self, _m_argv: MArgv) -> String {
+	pub fn d_home(&self, _m_argv: &MArgv) -> String {
 		let mut _userhome: String = String::from("");
 /*
 		if m_argv.m_check_parm("-home") && m_argv.m_is_next_parm() {
